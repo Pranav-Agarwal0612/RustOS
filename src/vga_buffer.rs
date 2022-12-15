@@ -49,22 +49,52 @@ struct Buffer {
     chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
+// #[derive(Default)]
 pub struct Writer {
     column_position: usize,
     color_code: ColorCode,
     buffer: &'static mut Buffer,
+    row_num: usize,
 }
 
 impl Writer {
+    // pub fn write_byte(&mut self, byte: u8) {
+    //     match byte {
+    //         b'\n' => self.new_line(),
+    //         _ => {
+    //             if self.column_position >= BUFFER_WIDTH {
+    //                 self.new_line();
+    //             }
+
+    //             let row = BUFFER_HEIGHT - 1;
+    //             let column = self.column_position;
+    //             let color_code = self.color_code;
+
+    //             self.buffer.chars[row][column].write(ScreenChar {
+    //                 ascii_character: byte,
+    //                 color_code: color_code,
+    //             });
+    //             self.column_position += 1;
+    //         }
+    //     }
+    // }
+
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
-            b'\n' => self.new_line(),
+            b'\n' => {
+                if self.row_num == BUFFER_HEIGHT - 1 {
+                    self.new_line()
+                } else {
+                    self.row_num += 1;
+                    self.column_position = 0;
+                }
+            }
             _ => {
                 if self.column_position >= BUFFER_WIDTH {
                     self.new_line();
                 }
 
-                let row = BUFFER_HEIGHT - 1;
+                let row = self.row_num;
                 let column = self.column_position;
                 let color_code = self.color_code;
 
@@ -138,6 +168,7 @@ lazy_static! {
         column_position: 0,
         color_code: ColorCode::new(Color::LightGreen, Color::Black),
         buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
+        row_num: 0,
     });
 }
 
