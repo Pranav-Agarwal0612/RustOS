@@ -82,12 +82,7 @@ impl Writer {
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
             b'\n' => {
-                if self.row_num == BUFFER_HEIGHT - 1 {
-                    self.new_line()
-                } else {
-                    self.row_num += 1;
-                    self.column_position = 0;
-                }
+                self.new_line();
             }
             _ => {
                 if self.column_position >= BUFFER_WIDTH {
@@ -108,24 +103,29 @@ impl Writer {
     }
 
     fn new_line(&mut self) {
-        for r in 0..BUFFER_HEIGHT - 1 {
-            for c in 0..BUFFER_WIDTH {
-                self.buffer.chars[r][c].write(self.buffer.chars[r + 1][c].read());
+        if self.row_num < BUFFER_HEIGHT - 1 {
+            self.row_num += 1;
+            self.column_position = 0;
+        } else {
+            for r in 0..BUFFER_HEIGHT - 1 {
+                for c in 0..BUFFER_WIDTH {
+                    self.buffer.chars[r][c].write(self.buffer.chars[r + 1][c].read());
+                }
             }
-        }
 
-        // CLEAR THE LAST ROW
-        let row = BUFFER_HEIGHT - 1;
-        let blank_char = ScreenChar {
-            ascii_character: 0,
-            color_code: ColorCode(0),
-        };
-        for c in 0..BUFFER_WIDTH {
-            self.buffer.chars[row][c].write(blank_char);
-        }
+            // CLEAR THE LAST ROW
+            let row = BUFFER_HEIGHT - 1;
+            let blank_char = ScreenChar {
+                ascii_character: 0,
+                color_code: ColorCode(0),
+            };
+            for c in 0..BUFFER_WIDTH {
+                self.buffer.chars[row][c].write(blank_char);
+            }
 
-        // REPOSITION THE COLUMN POINTER TO THE BEGINNING
-        self.column_position = 0;
+            // REPOSITION THE COLUMN POINTER TO THE BEGINNING
+            self.column_position = 0;
+        }
     }
 
     pub fn write_string(&mut self, s: &str) {
